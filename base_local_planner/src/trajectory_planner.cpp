@@ -263,6 +263,7 @@ namespace base_local_planner{
     double occ_cost = 0.0;
     double heading_diff = 0.0;
 
+    unsigned char cost_memory = 255;
     for(int i = 0; i < num_steps; ++i){
       //get map coordinates of a point
       unsigned int cell_x, cell_y;
@@ -274,7 +275,10 @@ namespace base_local_planner{
       }
 
       //check the point on the trajectory for legality
-      double footprint_cost = footprintCost(x_i, y_i, theta_i);
+      double clearence = 0.05;
+      double footprint_cost = min(footprintCost(x_i+clearence*cos(theta_i), y_i+clearence*sin(theta_i), theta_i),\
+                                  min(footprintCost(x_i+clearence*cos(theta_i+M_1_PI/2), y_i+clearence*sin(theta_i+M_1_PI/2), theta_i),\
+                                      footprintCost(x_i+clearence*cos(theta_i-M_1_PI/2), y_i+clearence*sin(theta_i-M_1_PI/2), theta_i)));
 
       //if the footprint hits an obstacle this trajectory is invalid
       if(footprint_cost < 0){
@@ -302,9 +306,17 @@ namespace base_local_planner{
         }
         */
       }
-
-      occ_cost = std::max(std::max(occ_cost, footprint_cost), double(costmap_.getCost(cell_x, cell_y)));
-
+      unsigned char cost_now = costmap_.getCost(cell_x, cell_y);
+      occ_cost = std::max(std::max(occ_cost, footprint_cost), double(cost_now));
+      if(cost_memory>=cost_now)
+      {
+          cost_memory=cost_now;
+      }
+      else
+      {
+          //traj.cost_ = -2.0;
+          //return;
+      }
       //do we want to follow blindly
       if (simple_attractor_) {
         goal_dist = (x_i - global_plan_[global_plan_.size() -1].pose.position.x) *

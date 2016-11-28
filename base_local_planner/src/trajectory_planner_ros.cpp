@@ -357,7 +357,7 @@ namespace base_local_planner {
       ROS_ERROR("This planner has not been initialized, please call initialize() before using this planner");
       return false;
     }
-
+    ROS_WARN("plan was set for ongoing hack of TP");
     //reset the global plan
     global_plan_.clear();
     global_plan_ = orig_global_plan;
